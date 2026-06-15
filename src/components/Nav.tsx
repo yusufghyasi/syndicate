@@ -44,10 +44,11 @@ export default function Nav() {
   return (
     <>
       {/* Announcement bar — only visible (solid) once scrolled; fully collapsed
-          to zero height at the top so it leaves NO sliver/line over the hero. */}
+          to zero height at the top so it leaves NO sliver/line over the hero.
+          Hidden while the mobile drawer is open so it can't peek above it. */}
       <div
         className={`relative z-50 grid overflow-hidden bg-foreground text-center text-[11px] uppercase tracking-[0.14em] text-background transition-all duration-300 ${
-          scrolled ? "max-h-10 py-2 opacity-100" : "max-h-0 py-0 opacity-0"
+          scrolled && !menuOpen ? "max-h-10 py-2 opacity-100" : "max-h-0 py-0 opacity-0"
         }`}
       >
         <span className="opacity-85">
@@ -120,9 +121,10 @@ export default function Nav() {
         </nav>
       </header>
 
-      {/* Mobile menu drawer */}
+      {/* Mobile menu drawer — z-[60] sits ABOVE the scrolled announcement bar
+          (z-50) and header (z-40) so neither peeks through when opened mid-page. */}
       <div
-        className={`fixed inset-0 z-30 md:hidden ${
+        className={`fixed inset-0 z-[60] md:hidden ${
           menuOpen ? "pointer-events-auto" : "pointer-events-none"
         }`}
         aria-hidden={!menuOpen}
@@ -136,10 +138,20 @@ export default function Nav() {
         />
         {/* panel */}
         <nav
-          className={`absolute inset-x-0 top-0 origin-top border-b border-border bg-background px-6 pb-8 pt-24 transition-all duration-300 ${
+          className={`absolute inset-x-0 top-0 origin-top border-b border-border bg-background px-6 pb-8 pt-20 transition-all duration-300 ${
             menuOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
           }`}
         >
+          {/* Close button lives INSIDE the drawer so it's always clickable even
+              when the header burger is covered by this higher-z panel. */}
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMenuOpen(false)}
+            className="absolute right-5 top-5 grid size-8 place-items-center border border-border transition-colors hover:bg-muted"
+          >
+            <X className="size-4" />
+          </button>
           <div className="flex flex-col gap-1">
             {links.map((l) => {
               const active = pathname === l.href;

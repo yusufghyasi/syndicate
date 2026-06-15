@@ -34,7 +34,21 @@ export default function Home() {
           <GLSLHills width="100%" height="100%" speed={0.4} />
         </div>
 
-        <div className="relative mx-auto flex min-h-[72vh] max-w-4xl flex-col items-center justify-center px-6 py-32 text-center">
+        {/* contrast scrim — radial wash of the page background behind the hero
+            copy. Opaque-ish at center for guaranteed text contrast, fades to
+            transparent at the edges so the wire-mountain ridges still show.
+            Theme-aware via var(--background): cream in light, near-black in dark.
+            Sits above the canvas (z-1) and below the copy (z-10). */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-[2]"
+          style={{
+            background:
+              "radial-gradient(64% 44% at 50% 56%, var(--background) 0%, color-mix(in oklab, var(--background) 55%, transparent) 48%, transparent 78%)",
+          }}
+        />
+
+        <div className="relative z-10 mx-auto flex min-h-[72vh] max-w-4xl flex-col items-center justify-center px-6 py-32 text-center">
           {/* eyebrow chip */}
           <div className="animate-rise">
             <span className="inline-flex items-center gap-2 border border-border bg-background/60 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-sm">

@@ -47,6 +47,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Render-blocking: sets .dark before first paint, flash-free. Must be a
+            plain inline <script> (no async/defer) so the parser executes it
+            before <body>. next/script beforeInteractive does NOT do this in App
+            Router — it queues the body via self.__next_s and runs it post-paint. */}
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="min-h-full flex flex-col">

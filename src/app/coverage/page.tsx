@@ -50,6 +50,10 @@ export default function Page() {
       {/* TABLE */}
       <section className="mx-auto max-w-5xl px-6 pb-24 pt-16">
         <Bracketed className="overflow-hidden bg-card">
+          {/* Horizontal scroll on narrow screens so the 4-col table never clips
+              inside the overflow-hidden Bracketed frame. */}
+          <div className="overflow-x-auto">
+          <div className="min-w-[600px]">
           <div className="grid grid-cols-[1.2fr_2fr_auto_auto] items-center gap-4 bg-muted px-6 py-3 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <span>Class</span>
             <span>Examples</span>
@@ -72,6 +76,8 @@ export default function Page() {
               </span>
             </div>
           ))}
+          </div>
+          </div>
         </Bracketed>
       </section>
 

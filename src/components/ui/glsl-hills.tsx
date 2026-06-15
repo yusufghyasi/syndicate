@@ -33,6 +33,7 @@ const GLSLHills = ({
     if (!canvasEl) return;
 
     let raf = 0;
+    let ro: ResizeObserver | null = null;
 
     const isDark = () => document.documentElement.classList.contains("dark");
     // Theme-aware: a bright gray glow on the dark page; on cream we need a
@@ -41,7 +42,7 @@ const GLSLHills = ({
       color ?? (isDark() ? [0.85, 0.85, 0.85] : [0.18, 0.17, 0.15]);
     // Wireframe ridge lines — these don't fill, so opacity can be higher
     // without ever forming a slab. Light needs a bit more to show on cream.
-    const themeOpacity = (): number => (isDark() ? 0.5 : 0.6);
+    const themeOpacity = (): number => (isDark() ? 0.5 : 0.5);
 
     // Plane class
     class Plane {
@@ -188,7 +189,12 @@ const GLSLHills = ({
                 // and the near ridges read clearly. Wireframe means no fill, so
                 // we can run a healthy opacity without a black slab forming.
                 float d = length(vPosition);
-                float fade = smoothstep(220.0, 40.0, d);
+                // Fade is RADIAL (distance from world origin). Camera-facing near
+                // ridges have length <~90; the far horizon convergence sits at
+                // ~110-145 where many rows pack into a few pixels and overdraw
+                // into a dark mass. Fade ONLY that far band: full opacity for
+                // d<=90 (all near/mid ridges survive), dissolved by ~150.
+                float fade = smoothstep(150.0, 90.0, d);
                 gl_FragColor = vec4(uColor, fade * uOpacity);
               }
             `,
@@ -230,14 +236,19 @@ const GLSLHills = ({
     const clock = new THREE.Clock();
     const plane = new Plane();
 
+    // Size to the CONTAINER (the hero box), not the window — otherwise on a
+    // portrait phone the canvas renders at the full viewport height, overflows
+    // the ~72vh hero, gets clipped, and the perspective squeezes the terrain.
     const resize = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-      camera.aspect = window.innerWidth / window.innerHeight;
+      const el = containerRef.current;
+      if (!el) return;
+      const w = el.clientWidth || window.innerWidth;
+      const h = el.clientHeight || window.innerHeight;
+      if (w === 0 || h === 0) return; // pre-layout tick — avoid NaN aspect
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.setSize(w, h, false); // updateStyle=false → keep CSS inset:0
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
     };
 
     let disposed = false;
@@ -258,12 +269,13 @@ const GLSLHills = ({
     };
 
     const init = () => {
-      renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setClearColor(0x000000, 0);
       camera.position.set(0, 16, cameraZ);
-      camera.lookAt(new THREE.Vector3(0, 28, 0));
+      camera.lookAt(new THREE.Vector3(0, 20, 0));
       scene.add(plane.mesh);
       window.addEventListener("resize", resize);
+      ro = new ResizeObserver(resize);
+      if (containerRef.current) ro.observe(containerRef.current);
       resize();
       clock.start();
       renderLoop();
@@ -286,6 +298,7 @@ const GLSLHills = ({
       themeObserver.disconnect();
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
+      ro?.disconnect();
       plane.mesh.geometry.dispose();
       (plane.mesh.material as THREE.Material).dispose();
       renderer.dispose();
@@ -302,6 +315,7 @@ const GLSLHills = ({
           right: 0,
           bottom: 0,
           left: 0,
+          display: "block",
           zIndex: 1,
         }}
       />
