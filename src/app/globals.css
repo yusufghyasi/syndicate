@@ -201,3 +201,61 @@ body {
 }
 
 .text-balance { text-wrap: balance; }
+
+/* ============================================================
+   Sniper-scope custom cursor
+   ============================================================ */
+/* Hide the native cursor everywhere once the scope is active (fine pointers
+   only — the component never adds this class on touch). */
+html.sniper-cursor,
+html.sniper-cursor * {
+  cursor: none !important;
+}
+
+.sniper-scope svg {
+  display: block;
+  overflow: visible;
+}
+.sniper-ring,
+.sniper-line {
+  stroke: var(--foreground);
+  opacity: 0.7;
+  transition: stroke 0.15s ease, opacity 0.15s ease;
+}
+.sniper-ring-inner {
+  stroke: var(--accent-red);
+  opacity: 0;
+  transform-origin: 28px 28px;
+  transform: scale(0.6);
+  transition: opacity 0.18s ease, transform 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sniper-dot {
+  fill: var(--accent-red);
+  transition: r 0.15s ease;
+}
+.sniper-scope {
+  transition: transform 0.06s linear;
+}
+/* Lock-on: ring goes red, inner reticle snaps in, crosshair brightens. */
+.sniper-scope[data-lock="1"] .sniper-ring {
+  stroke: var(--accent-red);
+  opacity: 1;
+}
+.sniper-scope[data-lock="1"] .sniper-line {
+  stroke: var(--accent-red);
+  opacity: 1;
+}
+.sniper-scope[data-lock="1"] .sniper-ring-inner {
+  opacity: 0.9;
+  transform: scale(1);
+}
+.sniper-scope[data-press="1"] .sniper-dot {
+  r: 2.6;
+}
+.sniper-hud {
+  opacity: 0.75;
+  transition: opacity 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sniper-root { display: none; }
+}

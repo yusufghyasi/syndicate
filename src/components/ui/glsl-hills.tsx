@@ -23,6 +23,10 @@ const GLSLHills = ({
 }: GLSLHillsProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Persist the animation clock ACROSS remounts (React Strict Mode double-mount
+  // in dev, fast-refresh, theme effect re-runs). Without this the scene rebuilds
+  // from time 0 and the terrain visibly "restarts". This ref keeps it continuous.
+  const persistTime = useRef(0);
 
   useEffect(() => {
     const canvasEl = canvasRef.current;
@@ -31,24 +35,29 @@ const GLSLHills = ({
     let raf = 0;
 
     const isDark = () => document.documentElement.classList.contains("dark");
-    // Theme-aware: a soft mid-gray on cream (stays subtle even where the
-    // translucent mesh overlaps), a brighter gray glow on the dark page.
+    // Theme-aware: a bright gray glow on the dark page; on cream we need a
+    // genuinely dark ink so the ridge lines actually read against the paper.
     const themeColor = (): [number, number, number] =>
-      color ?? (isDark() ? [0.8, 0.8, 0.8] : [0.45, 0.43, 0.4]);
+      color ?? (isDark() ? [0.85, 0.85, 0.85] : [0.18, 0.17, 0.15]);
+    // Wireframe ridge lines — these don't fill, so opacity can be higher
+    // without ever forming a slab. Light needs a bit more to show on cream.
+    const themeOpacity = (): number => (isDark() ? 0.5 : 0.6);
 
     // Plane class
     class Plane {
       uniforms: {
         time: { type: string; value: number };
         uColor: { value: THREE.Vector3 };
+        uOpacity: { value: number };
       };
       mesh: THREE.Mesh;
       time: number;
 
       constructor() {
         this.uniforms = {
-          time: { type: "f", value: 0 },
+          time: { type: "f", value: persistTime.current },
           uColor: { value: new THREE.Vector3(...themeColor()) },
+          uOpacity: { value: themeOpacity() },
         };
         this.mesh = this.createMesh();
         this.time = speed;
@@ -172,13 +181,20 @@ const GLSLHills = ({
               #define GLSLIFY 1
               varying vec3 vPosition;
               uniform vec3 uColor;
+              uniform float uOpacity;
 
               void main(void) {
-                float opacity = (96.0 - length(vPosition)) / 256.0 * 0.22;
-                gl_FragColor = vec4(uColor, clamp(opacity, 0.0, 0.5));
+                // Fade lines out with distance so the far edge dissolves softly
+                // and the near ridges read clearly. Wireframe means no fill, so
+                // we can run a healthy opacity without a black slab forming.
+                float d = length(vPosition);
+                float fade = smoothstep(220.0, 40.0, d);
+                gl_FragColor = vec4(uColor, fade * uOpacity);
               }
             `,
             transparent: true,
+            wireframe: true,
+            depthWrite: false,
           }),
         );
       }
@@ -186,13 +202,19 @@ const GLSLHills = ({
       render(time: number) {
         this.uniforms.time.value += time * this.time;
         // Keep `time` bounded so the noise sampled at `time * -30` never grows
-        // large enough to lose float precision (which freezes the terrain).
-        // 289 is the perlin lattice period; wrap on a large multiple of it so
-        // the wrap is seamless. 289 * 16 / 30 ≈ 154.13.
-        const WRAP = (289.0 * 16.0) / 30.0;
+        // large enough to lose float precision. For the wrap to be INVISIBLE,
+        // the z-offset (time * 30) must advance by a whole number of perlin
+        // lattice periods (289) at EVERY sampled scale (0.08, 0.06, 0.4).
+        // gcd(scales) = 0.02, so we need 30 * WRAP * 0.02 = k * 289, i.e.
+        // WRAP = 289 * k / 0.6. k = 6 → WRAP = 2890 (a few minutes between wraps),
+        // and 2890*30*0.08=6936=24·289, *0.06=5202=18·289, *0.4=34680=120·289 —
+        // all exact integer multiples, so the terrain is seamless across the wrap.
+        const WRAP = (289.0 * 6.0) / 0.6;
         if (this.uniforms.time.value > WRAP) {
           this.uniforms.time.value -= WRAP;
         }
+        // Stash the clock so a remount resumes from here instead of from 0.
+        persistTime.current = this.uniforms.time.value;
       }
     }
 
@@ -252,6 +274,7 @@ const GLSLHills = ({
     // Recolor live when the theme (.dark class) toggles.
     const themeObserver = new MutationObserver(() => {
       plane.uniforms.uColor.value.set(...themeColor());
+      plane.uniforms.uOpacity.value = themeOpacity();
     });
     themeObserver.observe(document.documentElement, {
       attributes: true,

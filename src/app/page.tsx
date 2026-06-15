@@ -28,7 +28,7 @@ export default function Home() {
         <div className="marble" />
         {/* animated rolling hills — full-bleed, fills the hero */}
         <div
-          className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_4%,#000_32%,#000_86%,transparent)]"
+          className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_0%,transparent_30%,#000_60%,#000_88%,transparent)]"
           aria-hidden
         >
           <GLSLHills width="100%" height="100%" speed={0.4} />

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Space_Grotesk } from "next/font/google";
-import Script from "next/script";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import Ticker from "@/components/Ticker";
+import SniperCursor from "@/components/SniperCursor";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -46,14 +46,15 @@ export default function RootLayout({
       className={`${geistMono.variable} ${spaceGrotesk.variable} h-full antialiased`}
       suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <Script id="theme-init" strategy="beforeInteractive">
-          {themeScript}
-        </Script>
         <Nav />
         <div className="flex-1">{children}</div>
         <Footer />
         <Ticker />
+        <SniperCursor />
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
 const links = [
@@ -15,6 +16,7 @@ const links = [
 export default function Nav() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -26,12 +28,26 @@ export default function Nav() {
     };
   }, []);
 
+  // Close the mobile menu whenever the route changes.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
+  // Lock body scroll while the mobile menu is open.
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [menuOpen]);
+
   return (
     <>
-      {/* Announcement bar — only visible (solid) once scrolled; gone at top */}
+      {/* Announcement bar — only visible (solid) once scrolled; fully collapsed
+          to zero height at the top so it leaves NO sliver/line over the hero. */}
       <div
-        className={`relative z-50 flex items-center justify-center overflow-hidden bg-foreground text-center text-[11px] uppercase tracking-[0.14em] text-background transition-all duration-300 ${
-          scrolled ? "py-2 opacity-100" : "py-0 opacity-0"
+        className={`relative z-50 grid overflow-hidden bg-foreground text-center text-[11px] uppercase tracking-[0.14em] text-background transition-all duration-300 ${
+          scrolled ? "max-h-10 py-2 opacity-100" : "max-h-0 py-0 opacity-0"
         }`}
       >
         <span className="opacity-85">
@@ -43,7 +59,7 @@ export default function Nav() {
         className={`sticky top-0 z-40 transition-colors duration-300 ${
           scrolled
             ? "border-b border-border bg-background/80 backdrop-blur-md"
-            : "border-b-0 bg-transparent"
+            : "border-0 bg-transparent"
         }`}
       >
         <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
@@ -86,13 +102,68 @@ export default function Nav() {
             <ThemeToggle />
             <Link
               href="/contact"
-              className="bg-foreground px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+              className="hidden bg-foreground px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85 sm:inline-flex"
             >
               Request access
             </Link>
+            {/* Mobile burger — only shown below md */}
+            <button
+              type="button"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+              className="grid size-8 place-items-center border border-border transition-colors hover:bg-muted md:hidden"
+            >
+              {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
+            </button>
           </div>
         </nav>
       </header>
+
+      {/* Mobile menu drawer */}
+      <div
+        className={`fixed inset-0 z-30 md:hidden ${
+          menuOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-hidden={!menuOpen}
+      >
+        {/* backdrop */}
+        <div
+          onClick={() => setMenuOpen(false)}
+          className={`absolute inset-0 bg-background/70 backdrop-blur-md transition-opacity duration-300 ${
+            menuOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        {/* panel */}
+        <nav
+          className={`absolute inset-x-0 top-0 origin-top border-b border-border bg-background px-6 pb-8 pt-24 transition-all duration-300 ${
+            menuOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
+          }`}
+        >
+          <div className="flex flex-col gap-1">
+            {links.map((l) => {
+              const active = pathname === l.href;
+              return (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`border-b border-hairline py-4 text-[15px] uppercase tracking-[0.1em] transition-colors ${
+                    active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              );
+            })}
+          </div>
+          <Link
+            href="/contact"
+            className="mt-8 inline-flex w-full items-center justify-center bg-foreground px-3.5 py-3.5 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+          >
+            Request access
+          </Link>
+        </nav>
+      </div>
     </>
   );
 }
