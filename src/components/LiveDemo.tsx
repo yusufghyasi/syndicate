@@ -1,532 +1,429 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * LiveDemo — an interactive Syndicate operations console embedded in the
- * landing page. Pure React + Tailwind (the site's tokens), no backend.
+ * LiveDemo — a full-width interactive Syndicate operations dashboard that sits
+ * right under the hero copy (agaro.ai "click anything" style), in Syndicate's
+ * SF-blue / off-white / pitch-black + rounded scheme. Pure React + Tailwind.
  *
- * Four live behaviours, all client-side:
- *   1. Switchable modules   — click the sidebar to swap the active console.
- *   2. Live KPIs            — numbers tick on a timer for a real-time feel.
- *   3. Working agent chat    — type a prompt, get a scripted streamed reply.
- *   4. Live activity feed    — new events animate in over time.
- *
- * Pentest-themed: recon, exploitation, confirmed findings, reporting — in
- * Syndicate's SF-blue / off-white / pitch-black + rounded scheme.
+ * Interactive:
+ *   - Left sidebar nav (grouped) — click a module to refocus the dashboard
+ *   - Top tabs (Overview / Runs / Health / Spend) — switch the KPI set
+ *   - Live KPIs that tick, a live area chart, a modules-health list (click a
+ *     row to inspect), a streaming live feed, and an Insights rail.
  */
 
-type Kpi = { lbl: string; val: number; fmt: "int" | "pct" | "ms" | "score"; sub: string; accent?: boolean };
-type Module = {
-  id: string;
-  label: string;
-  icon: string;
-  title: string;
-  subtitle: string;
-  kpis: Kpi[];
-  feed: string[];
-};
+// ----- sidebar nav (grouped, pentest modules) -----
+const NAV: { group: string; items: { id: string; label: string; icon: string; badge?: string }[] }[] = [
+  {
+    group: "Overview",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: "M3 3h5v5H3zM10 3h5v5h-5zM3 10h5v5H3zM10 10h5v5h-5z", badge: "9" },
+      { id: "activity", label: "Activity", icon: "M3 14V3M3 14h12M6 11l3-4 3 2 3-5" },
+      { id: "audit", label: "Audit log", icon: "M9 5a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM9 7v2l1.5 1" },
+    ],
+  },
+  {
+    group: "Recon",
+    items: [
+      { id: "surface", label: "Attack Surface", icon: "M9 2v3M9 13v3M2 9h3M13 9h3M9 6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z" },
+      { id: "auth", label: "Auth & Sessions", icon: "M5 8V6a4 4 0 0 1 8 0v2M4 8h10v6H4z" },
+    ],
+  },
+  {
+    group: "Exploitation",
+    items: [
+      { id: "engine", label: "Exploit Engine", icon: "M3 13 L8 8 M6 4h7v7 M13 4l-9 9" },
+      { id: "chains", label: "Attack Chains", icon: "M6 9a2 2 0 0 1 2-2h1M12 9a2 2 0 0 1-2 2H9M5 7l-2 2 2 2M13 7l2 2-2 2" },
+      { id: "idor", label: "Access Control", icon: "M9 2 L15 5 V9 C15 13 12 15 9 16 C6 15 3 13 3 9 V5 Z" },
+    ],
+  },
+  {
+    group: "Findings",
+    items: [
+      { id: "confirmed", label: "Confirmed", icon: "M4 9l3 3 7-7" },
+      { id: "report", label: "Reports", icon: "M4 3h10v12H4zM7 7h4M7 10h4" },
+    ],
+  },
+  {
+    group: "Coverage",
+    items: [{ id: "scope", label: "Scope & Targets", icon: "M9 3v12M3 9h12" }],
+  },
+];
 
-const MODULES: Module[] = [
+// ----- KPI sets per tab -----
+type Kpi = { lbl: string; val: number; fmt: "int" | "pct" | "k" | "score"; sub: string; accent?: boolean };
+const TABS: { id: string; label: string; kpis: Kpi[] }[] = [
   {
-    id: "recon",
-    label: "Recon",
-    icon: "M9 2v3M9 13v3M2 9h3M13 9h3M9 6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z",
-    title: "Attack-Surface Recon",
-    subtitle: "target · app.acme.io",
+    id: "overview",
+    label: "Overview",
     kpis: [
-      { lbl: "Endpoints", val: 1284, fmt: "int", sub: "mapped" },
-      { lbl: "Inputs", val: 3962, fmt: "int", sub: "fuzzable params" },
-      { lbl: "Auth flows", val: 7, fmt: "int", accent: true, sub: "discovered" },
-    ],
-    feed: [
-      "Crawled /api/v2 · 214 routes",
-      "GraphQL schema introspected",
-      "JWT auth flow fingerprinted",
-      "Hidden admin route found · /ops",
+      { lbl: "Targets live", val: 9, fmt: "int", sub: "+2 this scan", accent: true },
+      { lbl: "Requests / 24h", val: 84200, fmt: "k", sub: "across sandbox" },
+      { lbl: "Confirmed", val: 9, fmt: "int", sub: "by exploitation" },
+      { lbl: "False positives", val: 0, fmt: "int", sub: "PoC || GTFO" },
     ],
   },
   {
-    id: "exploit",
-    label: "Exploit",
-    icon: "M3 13 L8 8 M6 4h7v7 M13 4l-9 9",
-    title: "Exploitation Engine",
-    subtitle: "live · sandboxed",
+    id: "runs",
+    label: "Runs",
     kpis: [
-      { lbl: "Chains run", val: 142, fmt: "int", sub: "this session" },
-      { lbl: "Confirmed", val: 9, fmt: "int", accent: true, sub: "by exploitation" },
-      { lbl: "False pos", val: 0, fmt: "int", sub: "PoC || GTFO" },
-    ],
-    feed: [
-      "IDOR confirmed · /api/orders/{id}",
-      "SQLi chained → data read",
-      "Auth bypass · privilege escalation",
-      "SSRF reached internal metadata",
+      { lbl: "Chains run", val: 1842, fmt: "int", sub: "this session" },
+      { lbl: "Succeeded", val: 142, fmt: "int", accent: true, sub: "reached impact" },
+      { lbl: "Mean time", val: 340, fmt: "int", sub: "ms to PoC" },
+      { lbl: "Coverage", val: 96, fmt: "pct", sub: "of surface" },
     ],
   },
   {
-    id: "findings",
-    label: "Findings",
-    icon: "M5 3h6l3 3v9H5zM5 8h8M5 11h8",
-    title: "Confirmed Findings",
-    subtitle: "severity · prioritized",
+    id: "health",
+    label: "Health",
     kpis: [
       { lbl: "Critical", val: 2, fmt: "int", accent: true, sub: "exploitable now" },
       { lbl: "High", val: 5, fmt: "int", sub: "chainable" },
       { lbl: "Mean CVSS", val: 84, fmt: "score", sub: "top findings" },
-    ],
-    feed: [
-      "CRIT · Pre-auth RCE · deserialize",
-      "CRIT · Cross-tenant IDOR",
-      "HIGH · Stored XSS → session theft",
-      "HIGH · Mass assignment · role=admin",
+      { lbl: "Replayable", val: 100, fmt: "pct", sub: "every finding" },
     ],
   },
   {
-    id: "report",
-    label: "Report",
-    icon: "M4 3h10v12H4zM7 7h4M7 10h4",
-    title: "Remediation Report",
-    subtitle: "act-ready · per finding",
+    id: "spend",
+    label: "Scope",
     kpis: [
-      { lbl: "Repro steps", val: 100, fmt: "pct", sub: "every finding" },
-      { lbl: "Time to PoC", val: 340, fmt: "ms", sub: "avg verify" },
-      { lbl: "Fix guidance", val: 9, fmt: "int", accent: true, sub: "attached" },
-    ],
-    feed: [
-      "Report SYN-001 generated",
-      "Repro steps + curl attached",
-      "Remediation guidance written",
-      "Exported to Jira · 9 tickets",
+      { lbl: "In scope", val: 1284, fmt: "int", sub: "endpoints" },
+      { lbl: "Out of scope", val: 38, fmt: "int", sub: "respected" },
+      { lbl: "Credentials", val: 0, fmt: "int", accent: true, sub: "retained" },
+      { lbl: "Environments", val: 1, fmt: "int", sub: "isolated" },
     ],
   },
 ];
 
-type Reply = { match: string[]; steps: [string, string][] };
-const REPLIES: Reply[] = [
-  {
-    match: ["recon", "surface", "endpoint", "map", "crawl", "scan"],
-    steps: [
-      ["Discover", "1,284 endpoints · 3,962 inputs mapped"],
-      ["Assess", "7 auth flows · hidden /ops route flagged"],
-      ["Confirm", "Recon snapshot saved. Ready to exploit."],
-    ],
-  },
-  {
-    match: ["idor", "exploit", "chain", "rce", "sqli", "ssrf", "exploitable"],
-    steps: [
-      ["Discover", "142 chains run in sandbox"],
-      ["Assess", "IDOR + SQLi chained → cross-tenant read"],
-      ["Confirm", "Exploited. PoC captured, 0 false positives."],
-    ],
-  },
-  {
-    match: ["finding", "critical", "severity", "cvss", "vuln", "high"],
-    steps: [
-      ["Discover", "9 confirmed · 2 critical, 5 high"],
-      ["Assess", "Top: pre-auth RCE via unsafe deserialize"],
-      ["Confirm", "Prioritized by exploitability. CVSS 9.8."],
-    ],
-  },
-  {
-    match: ["report", "fix", "remediat", "repro", "jira", "export"],
-    steps: [
-      ["Discover", "9 findings · 100% with repro steps"],
-      ["Assess", "Fix guidance written per finding"],
-      ["Confirm", "Report SYN-001 exported · 9 Jira tickets."],
-    ],
-  },
+// ----- modules health list -----
+const MODULES = [
+  { name: "Attack Surface", grp: "RECON", icon: "M9 2v3M2 9h3M13 9h3M9 6.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5Z", meta: "1,284 endpoints", status: "mapped" },
+  { name: "Auth & Sessions", grp: "RECON", icon: "M5 8V6a4 4 0 0 1 8 0v2M4 8h10v6H4z", meta: "7 flows", status: "bypass" },
+  { name: "Exploit Engine", grp: "EXPLOITATION", icon: "M3 13 L8 8 M6 4h7v7", meta: "142 chains", status: "active" },
+  { name: "Access Control", grp: "EXPLOITATION", icon: "M9 2 L15 5 V9 C15 13 12 15 9 16 C6 15 3 13 3 9 V5 Z", meta: "IDOR · BOLA", status: "confirmed" },
+  { name: "Injection", grp: "EXPLOITATION", icon: "M3 13 L8 8 M13 4l-9 9", meta: "SQLi · cmd", status: "confirmed" },
+  { name: "Confirmed Findings", grp: "FINDINGS", icon: "M4 9l3 3 7-7", meta: "2 crit · 5 high", status: "review" },
 ];
 
-const CHIPS = ["Map the attack surface", "What's exploitable?", "Show critical findings"];
+// ----- live feed events -----
+const FEED = [
+  ["Attack Surface", "mapped", "214 routes crawled · /api/v2"],
+  ["Access Control", "confirmed", "IDOR · /api/orders/{id} cross-tenant"],
+  ["Injection", "confirmed", "SQLi chained → data read"],
+  ["Auth & Sessions", "bypass", "privilege escalation · role=admin"],
+  ["Exploit Engine", "active", "SSRF reached internal metadata"],
+  ["Confirmed Findings", "review", "Pre-auth RCE via unsafe deserialize"],
+];
+
+// ----- insights rail -----
+const INSIGHTS = [
+  { tag: "CRITICAL", title: "Pre-auth RCE confirmed", body: "Unsafe deserialization on /api/import reached code execution in the sandbox — no auth required.", stat: "CVSS 9.8", delta: "exploited" },
+  { tag: "EXPLOIT", title: "IDOR chain reads any tenant", body: "Predictable order IDs + missing object-level checks let a low-priv user read across tenants.", stat: "1,284 objects", delta: "cross-tenant" },
+  { tag: "COVERAGE", title: "Surface fully enumerated", body: "GraphQL introspection + crawl mapped the full route table, including a hidden /ops admin panel.", stat: "100% mapped", delta: "+1 hidden" },
+];
 
 function fmt(v: number, kind: Kpi["fmt"]) {
-  if (kind === "int") return Math.round(v).toLocaleString("en-US");
+  if (kind === "k") return (v / 1000).toFixed(1) + "K";
   if (kind === "pct") return Math.round(v) + "%";
-  if (kind === "ms") return Math.round(v) + "ms";
   if (kind === "score") return (v / 10).toFixed(1);
-  return String(Math.round(v));
+  return Math.round(v).toLocaleString("en-US");
 }
 
-type Msg =
-  | { role: "agent"; text: string }
-  | { role: "user"; text: string }
-  | { role: "thinking" }
-  | { role: "steps"; steps: [string, string][]; shown: number; typed: string };
+// deterministic-ish chart path (handled vs escalated)
+const HANDLED = [22, 26, 24, 30, 28, 34, 33, 40, 52, 66, 78, 72, 64, 58];
+const ESCAL = [3, 4, 3, 5, 4, 4, 5, 4, 6, 5, 7, 6, 5, 5];
 
 export default function LiveDemo() {
-  const [activeId, setActiveId] = useState(MODULES[0].id);
-  const active = MODULES.find((m) => m.id === activeId)!;
+  const [activeNav, setActiveNav] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("overview");
+  const [activeModule, setActiveModule] = useState(0);
+  const tab = TABS.find((t) => t.id === activeTab)!;
 
-  // live KPI values (random-walk around the module's base values)
-  const [kpiVals, setKpiVals] = useState<number[]>(active.kpis.map((k) => k.val));
-  const [flash, setFlash] = useState<number>(-1);
-
-  // activity feed
-  const [feed, setFeed] = useState<{ text: string; t: string; act?: boolean }[]>([]);
+  const [kpiVals, setKpiVals] = useState<number[]>(tab.kpis.map((k) => k.val));
+  const [flash, setFlash] = useState(-1);
+  const [feed, setFeed] = useState<{ mod: string; status: string; text: string; t: string }[]>([]);
   const feedIdx = useRef(0);
-
-  // chat
-  const [msgs, setMsgs] = useState<Msg[]>([
-    { role: "agent", text: "Ask me anything about this assessment — try “What's exploitable?” or pick a module." },
-  ]);
-  const [input, setInput] = useState("");
-  const busy = useRef(false);
-  const threadRef = useRef<HTMLDivElement>(null);
-
-  // clock
-  const [clock, setClock] = useState("--:--:-- UTC");
-
-  // in-view gate so timers only run when visible
+  const [clock, setClock] = useState("--:--:--");
   const rootRef = useRef<HTMLDivElement>(null);
   const [inView, setInView] = useState(false);
 
-  // reset KPIs + feed on module switch
-  useEffect(() => {
-    setKpiVals(active.kpis.map((k) => k.val));
-    const now = nowStr();
-    setFeed(active.feed.slice(0, 3).map((text) => ({ text, t: now })));
-    feedIdx.current = 3;
-  }, [activeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  const navLabel = useMemo(() => {
+    for (const g of NAV) for (const it of g.items) if (it.id === activeNav) return it.label;
+    return "Dashboard";
+  }, [activeNav]);
 
-  // in-view observer
+  useEffect(() => setKpiVals(tab.kpis.map((k) => k.val)), [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const now = nowStr();
+    setFeed(FEED.slice(0, 4).map(([mod, status, text]) => ({ mod, status, text, t: now })));
+    feedIdx.current = 4;
+  }, []);
+
   useEffect(() => {
     const el = rootRef.current;
-    if (!el || !("IntersectionObserver" in window)) {
-      setInView(true);
-      return;
-    }
-    const io = new IntersectionObserver(
-      (entries) => entries.forEach((e) => setInView(e.isIntersecting)),
-      { threshold: 0.12 },
-    );
+    if (!el || !("IntersectionObserver" in window)) { setInView(true); return; }
+    const io = new IntersectionObserver((es) => es.forEach((e) => setInView(e.isIntersecting)), { threshold: 0.05 });
     io.observe(el);
     return () => io.disconnect();
   }, []);
 
-  // clock (always)
   useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      const p = (n: number) => String(n).padStart(2, "0");
-      setClock(`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())} UTC`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
+    const t = () => { const d = new Date(); const p = (n: number) => String(n).padStart(2, "0"); setClock(`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`); };
+    t(); const id = setInterval(t, 1000); return () => clearInterval(id);
   }, []);
 
-  // live KPI ticking — only while in view
   useEffect(() => {
     if (!inView) return;
     const id = setInterval(() => {
-      setKpiVals((prev) =>
-        prev.map((v, i) => {
-          const base = active.kpis[i].val;
-          const jitter = base * (Math.random() * 0.012 - 0.004);
-          return Math.max(0, base + jitter);
-        }),
-      );
-      const i = Math.floor(Math.random() * active.kpis.length);
-      setFlash(i);
+      setKpiVals((prev) => prev.map((v, i) => {
+        const base = tab.kpis[i].val;
+        return Math.max(0, base + base * (Math.random() * 0.012 - 0.004));
+      }));
+      setFlash(Math.floor(Math.random() * tab.kpis.length));
       setTimeout(() => setFlash(-1), 480);
-    }, 2200);
+    }, 2300);
     return () => clearInterval(id);
-  }, [inView, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [inView, activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // live feed — only while in view
   useEffect(() => {
     if (!inView) return;
     const id = setInterval(() => {
-      const items = active.feed;
-      const text = items[feedIdx.current % items.length];
+      const [mod, status, text] = FEED[feedIdx.current % FEED.length];
       feedIdx.current += 1;
-      setFeed((prev) => [{ text, t: nowStr() }, ...prev].slice(0, 6));
-    }, 4200);
+      setFeed((prev) => [{ mod, status, text, t: nowStr() }, ...prev].slice(0, 5));
+    }, 3800);
     return () => clearInterval(id);
-  }, [inView, activeId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [inView]);
 
-  // autoscroll chat
-  useEffect(() => {
-    const el = threadRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [msgs]);
+  function nowStr() { const d = new Date(); const p = (n: number) => String(n).padStart(2, "0"); return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }
 
-  function nowStr() {
-    const d = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
-  }
-
-  function pickReply(q: string): Reply {
-    const lc = q.toLowerCase();
-    let best: Reply | null = null;
-    let score = 0;
-    for (const r of REPLIES) {
-      const s = r.match.reduce((n, kw) => (lc.includes(kw) ? n + 1 : n), 0);
-      if (s > score) {
-        score = s;
-        best = r;
-      }
-    }
-    return best || REPLIES[0];
-  }
-
-  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-  async function send(q: string) {
-    const v = q.trim();
-    if (!v || busy.current) return;
-    busy.current = true;
-    setInput("");
-    setMsgs((m) => [...m, { role: "user", text: v }, { role: "thinking" }]);
-    await sleep(600);
-
-    const reply = pickReply(v);
-    // replace thinking with an empty steps block
-    setMsgs((m) => {
-      const copy = m.slice(0, -1);
-      copy.push({ role: "steps", steps: reply.steps, shown: 0, typed: "" });
-      return copy;
-    });
-
-    // stream each step
-    for (let i = 0; i < reply.steps.length; i++) {
-      const body = reply.steps[i][1];
-      // reveal the row
-      setMsgs((m) => updateSteps(m, (s) => ({ ...s, shown: i + 1, typed: "" })));
-      await sleep(90);
-      for (let c = 0; c < body.length; c++) {
-        const slice = body.slice(0, c + 1);
-        setMsgs((m) => updateSteps(m, (s) => ({ ...s, typed: slice })));
-        if (c % 2 === 0) await sleep(9);
-      }
-      // Row i is now fully typed. When the next row reveals, `shown` advances so
-      // this row falls back to its full `body` (isLastShown becomes false) —
-      // no extra bookkeeping needed.
-      await sleep(150);
-    }
-    // log final action into the live feed
-    const last = reply.steps[reply.steps.length - 1][1];
-    setFeed((prev) => [{ text: last, t: nowStr(), act: true }, ...prev].slice(0, 6));
-    busy.current = false;
-  }
-
-  // helper: update the last steps message
-  function updateSteps(m: Msg[], fn: (s: Extract<Msg, { role: "steps" }>) => Msg): Msg[] {
-    const copy = [...m];
-    for (let i = copy.length - 1; i >= 0; i--) {
-      if (copy[i].role === "steps") {
-        copy[i] = fn(copy[i] as Extract<Msg, { role: "steps" }>);
-        break;
-      }
-    }
-    return copy;
-  }
+  // build chart SVG paths
+  const W = 560, H = 150, n = HANDLED.length;
+  const max = Math.max(...HANDLED) * 1.15;
+  const xs = (i: number) => (i / (n - 1)) * W;
+  const ys = (v: number) => H - (v / max) * H;
+  const line = (arr: number[]) => arr.map((v, i) => `${i === 0 ? "M" : "L"}${xs(i).toFixed(1)},${ys(v).toFixed(1)}`).join(" ");
+  const area = `${line(HANDLED)} L${W},${H} L0,${H} Z`;
 
   return (
-    <section id="live-demo" className="mx-auto max-w-6xl px-6 py-20">
-      <div className="flex flex-col items-start">
-        <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-          <span className="size-1.5 rounded-full bg-accent-blue" />
-          Live demo
+    <div ref={rootRef} className="relative z-10 mx-auto w-full max-w-[1240px] px-4 pb-24 sm:px-6">
+      {/* LIVE DEMO pill */}
+      <div className="mb-5 flex justify-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-border bg-background/60 px-3.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground backdrop-blur-sm">
+          <Pulse /> Live demo · click anything
         </span>
-        <h2 className="mt-5 max-w-3xl font-display text-[clamp(26px,3.6vw,40px)] font-medium leading-[1.08] tracking-tight text-balance">
-          Don&apos;t take our word for it — <span className="text-accent-blue">drive the console</span>.
-        </h2>
-        <p className="mt-4 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
-          Switch phases, ask the agent, and watch Syndicate confirm what&apos;s actually exploitable — in real time.
-        </p>
       </div>
 
-      <div
-        ref={rootRef}
-        className="mt-10 overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_40px_90px_-40px_rgba(0,0,0,0.5)]"
-      >
-        {/* chrome bar */}
-        <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <span className="flex gap-1.5">
-              <span className="size-2.5 rounded-full bg-foreground/20" />
-              <span className="size-2.5 rounded-full bg-foreground/20" />
-              <span className="size-2.5 rounded-full bg-accent-blue/70" />
-            </span>
-            <span className="font-mono text-[11px] tracking-[0.06em] text-muted-foreground">{active.title}</span>
+      <div className="overflow-hidden rounded-[var(--radius-lg)] border border-border bg-card shadow-[0_50px_120px_-50px_rgba(0,0,0,0.6)]">
+        {/* ===== top bar ===== */}
+        <div className="flex items-center gap-3 border-b border-border bg-muted/40 px-4 py-3">
+          <span className="flex gap-1.5">
+            <span className="size-3 rounded-full bg-foreground/15" />
+            <span className="size-3 rounded-full bg-foreground/15" />
+            <span className="size-3 rounded-full bg-accent-blue/70" />
+          </span>
+          <span className="ml-1 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-background/50 px-2.5 py-1.5 text-[12px]">
+            <span className="grid size-4 place-items-center rounded bg-accent-blue/20 text-[9px] text-accent-blue">◆</span>
+            <span className="font-medium">Acme Corp</span>
+            <span className="text-muted-foreground/60">▾</span>
+          </span>
+          <div className="mx-2 hidden min-w-0 flex-1 items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-background/40 px-3 py-1.5 text-[12px] text-muted-foreground/60 md:flex">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4"><circle cx="7" cy="7" r="4.5" /><path d="M11 11l3 3" strokeLinecap="round" /></svg>
+            <span className="truncate">Search targets, runs, findings…</span>
+            <span className="ml-auto rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">⌘K</span>
           </div>
-          <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.12em] text-accent-blue">
-              <Pulse /> Live
+          <div className="ml-auto flex items-center gap-2">
+            <span className="hidden items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-background/40 px-2.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground sm:flex">All targets ▾</span>
+            <span className="hidden items-center gap-1.5 rounded-[var(--radius-sm)] border border-border bg-background/40 px-2.5 py-1.5 font-mono text-[10.5px] uppercase tracking-[0.08em] text-muted-foreground sm:flex">Last 24h ▾</span>
+            <span className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-foreground px-3 py-1.5 text-[11px] font-medium text-background">
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2v12M2 8h12" strokeLinecap="round" /></svg>
+              Generate report
             </span>
-            <span className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground/70">{clock}</span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[200px_1fr]">
+        {/* ===== body: sidebar | center | insights ===== */}
+        <div className="grid grid-cols-1 lg:grid-cols-[208px_1fr] xl:grid-cols-[208px_1fr_300px]">
           {/* sidebar */}
-          <aside className="flex gap-1 overflow-x-auto border-b border-border bg-muted/20 p-3 md:flex-col md:overflow-visible md:border-b-0 md:border-r">
-            {MODULES.map((m) => {
-              const on = m.id === activeId;
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={on}
-                  onClick={() => setActiveId(m.id)}
-                  className={`flex shrink-0 items-center gap-2.5 rounded-[var(--radius-sm)] border px-3 py-2.5 text-left text-[13px] font-medium transition-colors ${
-                    on
-                      ? "border-accent-blue/40 bg-accent-blue/10 text-foreground"
-                      : "border-transparent text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <svg
-                    width="17"
-                    height="17"
-                    viewBox="0 0 18 18"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className={on ? "text-accent-blue" : "opacity-70"}
-                  >
-                    <path d={m.icon} />
-                  </svg>
-                  <span className="hidden sm:inline md:inline">{m.label}</span>
-                </button>
-              );
-            })}
-            <div className="ml-auto mt-0 hidden items-center gap-2 px-2 pt-3 font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground/70 md:mt-auto md:flex">
-              <Pulse /> sandbox armed
-            </div>
+          <aside className="hidden border-r border-border bg-muted/20 p-3 lg:block">
+            {NAV.map((g) => (
+              <div key={g.group} className="mb-4">
+                <div className="px-2 pb-1.5 font-mono text-[9.5px] uppercase tracking-[0.14em] text-muted-foreground/50">{g.group}</div>
+                {g.items.map((it) => {
+                  const on = it.id === activeNav;
+                  return (
+                    <button
+                      key={it.id}
+                      onClick={() => setActiveNav(it.id)}
+                      className={`flex w-full items-center gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-2 text-left text-[13px] transition-colors ${
+                        on ? "bg-accent-blue/10 font-medium text-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      }`}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className={on ? "text-accent-blue" : "opacity-70"}><path d={it.icon} /></svg>
+                      <span className="truncate">{it.label}</span>
+                      {it.badge && <span className={`ml-auto rounded px-1.5 py-0.5 font-mono text-[9.5px] ${on ? "bg-accent-blue/20 text-accent-blue" : "bg-muted text-muted-foreground"}`}>{it.badge}</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
           </aside>
 
-          {/* main */}
-          <div className="flex flex-col p-5 md:p-6">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <div className="font-display text-[22px] font-medium leading-tight">{active.title}</div>
-                <div className="mt-1.5 font-mono text-[10.5px] uppercase tracking-[0.12em] text-muted-foreground/70">
-                  {active.subtitle}
-                </div>
-              </div>
-              <div className="hidden gap-4 pt-1 sm:flex">
-                {["Overview", "Stream", "Agents"].map((t, i) => (
-                  <span
-                    key={t}
-                    className={`border-b-[1.5px] pb-1.5 font-mono text-[10.5px] uppercase tracking-[0.1em] ${
-                      i === 0 ? "border-accent-blue text-foreground" : "border-transparent text-muted-foreground/70"
-                    }`}
-                  >
-                    {t}
-                  </span>
-                ))}
-              </div>
+          {/* center */}
+          <div className="min-w-0 p-5 sm:p-6">
+            <div className="font-display text-[22px] font-medium tracking-tight">{navLabel}</div>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              Assessment summary across every target in scope — last 24 hours, isolated environment.
+            </p>
+
+            {/* tabs */}
+            <div className="mt-4 inline-flex gap-1 rounded-[var(--radius-sm)] border border-border bg-muted/30 p-1">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setActiveTab(t.id)}
+                  className={`rounded-[5px] px-3 py-1.5 text-[12px] transition-colors ${
+                    activeTab === t.id ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
             </div>
 
-            {/* KPIs */}
-            <div className="mb-5 grid grid-cols-3 gap-3">
-              {active.kpis.map((k, i) => (
-                <div key={k.lbl} className="rounded-[var(--radius-sm)] border border-border bg-muted/30 p-4">
-                  <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70">{k.lbl}</div>
-                  <div
-                    className={`mt-2 font-display text-[clamp(20px,2.4vw,30px)] leading-none transition-colors duration-300 ${
-                      k.accent ? "text-accent-blue" : "text-foreground"
-                    } ${flash === i ? "!text-accent-blue" : ""}`}
-                  >
+            {/* KPI cards */}
+            <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {tab.kpis.map((k, i) => (
+                <div key={k.lbl} className="rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/70">{k.lbl}</div>
+                  <div className={`mt-2 font-display text-[clamp(22px,2.6vw,30px)] leading-none transition-colors duration-300 ${k.accent ? "text-accent-blue" : "text-foreground"} ${flash === i ? "!text-accent-blue" : ""}`}>
                     {fmt(kpiVals[i] ?? k.val, k.fmt)}
                   </div>
-                  <div className="mt-1.5 text-[11.5px] text-muted-foreground">{k.sub}</div>
+                  <div className="mt-1.5 text-[11px] text-muted-foreground">{k.sub}</div>
                 </div>
               ))}
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.4fr_1fr]">
-              {/* chat */}
-              <div className="flex flex-col rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
-                <div className="mb-3 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70">
-                  Ask the agent
+            {/* chart + modules health */}
+            <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[1.3fr_1fr]">
+              {/* chart */}
+              <div className="rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/70">Requests · last 24h</div>
+                    <div className="mt-1 font-display text-[19px]">84,212 <span className="text-[13px] text-muted-foreground">handled</span></div>
+                  </div>
+                  <div className="flex gap-3 font-mono text-[10px] uppercase tracking-[0.08em]">
+                    <span className="flex items-center gap-1.5 text-foreground"><span className="h-px w-3 bg-foreground" /> Handled</span>
+                    <span className="flex items-center gap-1.5 text-accent-blue"><span className="h-px w-3 border-t border-dashed border-accent-blue" /> Confirmed</span>
+                  </div>
                 </div>
-                <div ref={threadRef} className="flex max-h-[230px] flex-1 flex-col gap-3 overflow-y-auto pr-1">
-                  {msgs.map((m, i) => (
-                    <MsgRow key={i} m={m} />
+                <svg viewBox={`0 0 ${W} ${H + 22}`} className="mt-3 w-full" preserveAspectRatio="none" style={{ height: 170 }}>
+                  <defs>
+                    <linearGradient id="ldfill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent-blue)" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="var(--accent-blue)" stopOpacity="0" />
+                    </linearGradient>
+                  </defs>
+                  <path d={area} fill="url(#ldfill)" />
+                  <path d={line(HANDLED)} fill="none" stroke="var(--accent-blue)" strokeWidth="1.6" />
+                  <path d={line(ESCAL)} fill="none" stroke="currentColor" strokeWidth="1.2" strokeDasharray="3 3" className="text-muted-foreground/50" />
+                  {["00:00", "06:00", "12:00", "18:00", "24:00"].map((lbl, i) => (
+                    <text key={lbl} x={(i / 4) * W} y={H + 16} fontSize="9" fontFamily="var(--font-mono)" fill="currentColor" className="text-muted-foreground/50" textAnchor={i === 0 ? "start" : i === 4 ? "end" : "middle"}>{lbl}</text>
                   ))}
-                </div>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    send(input);
-                  }}
-                  className="mt-3 flex items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-background/60 px-3 py-2.5 focus-within:border-accent-blue/50"
-                >
-                  <span className="font-mono text-accent-blue">›</span>
-                  <input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Brief me on what's exploitable…"
-                    aria-label="Message the Syndicate agent"
-                    autoComplete="off"
-                    className="flex-1 bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60"
-                  />
-                  <button
-                    type="submit"
-                    aria-label="Send"
-                    className="grid size-7 place-items-center rounded-[6px] bg-accent-blue text-background transition-transform hover:translate-x-px"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M3 8h10M9 4l4 4-4 4" />
-                    </svg>
-                  </button>
-                </form>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {CHIPS.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => send(c)}
-                      className="rounded-full border border-border bg-background/40 px-2.5 py-1.5 font-mono text-[10.5px] text-muted-foreground transition-colors hover:border-accent-blue/40 hover:bg-accent-blue/10 hover:text-foreground"
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
+                </svg>
               </div>
 
-              {/* activity feed */}
-              <div className="flex flex-col rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
-                <div className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground/70">
-                  Activity <Pulse />
+              {/* modules health */}
+              <div className="rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/70">Modules · health</div>
+                  <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted-foreground/50">tap a row</span>
                 </div>
-                <ul className="flex flex-col gap-px overflow-hidden">
-                  {feed.map((f, i) => (
-                    <li
-                      key={f.t + f.text + i}
-                      className="grid animate-[ld-slide_0.4s_ease] grid-cols-[auto_1fr_auto] items-center gap-2.5 border-b border-hairline py-2.5 last:border-b-0"
-                    >
-                      <span className={`size-1.5 rounded-full ${f.act ? "bg-accent-blue ring-2 ring-accent-blue/20" : "bg-accent-blue/70"}`} />
-                      <span className={`truncate text-[12.5px] ${f.act ? "text-foreground" : "text-muted-foreground"}`}>{f.text}</span>
-                      <span className="font-mono text-[10px] text-muted-foreground/60">{f.t}</span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-3 flex flex-col gap-1.5">
+                  {MODULES.map((m, i) => {
+                    const on = i === activeModule;
+                    return (
+                      <button
+                        key={m.name}
+                        onClick={() => setActiveModule(i)}
+                        className={`flex items-center gap-3 rounded-[var(--radius-sm)] border px-3 py-2.5 text-left transition-colors ${
+                          on ? "border-accent-blue/40 bg-accent-blue/[0.07]" : "border-border bg-background/30 hover:bg-muted"
+                        }`}
+                      >
+                        <span className="grid size-7 shrink-0 place-items-center rounded-[6px] bg-accent-blue/10">
+                          <svg width="14" height="14" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" className="text-accent-blue"><path d={m.icon} /></svg>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-[13px] font-medium">{m.name}</span>
+                          <span className="block font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted-foreground/60">{m.grp}</span>
+                        </span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.06em] ${
+                          m.status === "confirmed" || m.status === "bypass" ? "bg-accent-blue/15 text-accent-blue" : "bg-muted text-muted-foreground"
+                        }`}>{m.status}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
+
+            {/* live feed */}
+            <div className="mt-4 rounded-[var(--radius-sm)] border border-border bg-muted/20 p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/70">Recent activity · live feed <Pulse /></div>
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.1em] text-muted-foreground/50">{clock} UTC</span>
+              </div>
+              <ul className="mt-3 flex flex-col">
+                {feed.map((f, i) => (
+                  <li key={f.t + f.text + i} className="grid animate-[ld-slide_0.4s_ease] grid-cols-[52px_1fr_auto] items-center gap-3 border-b border-hairline py-2.5 last:border-b-0">
+                    <span className="font-mono text-[10px] text-muted-foreground/50">{f.t}</span>
+                    <span className="min-w-0">
+                      <span className="text-[12.5px] text-foreground">{f.mod}</span>
+                      <span className="ml-2 text-[12px] text-muted-foreground">— {f.text}</span>
+                    </span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] uppercase ${
+                      f.status === "confirmed" || f.status === "bypass" ? "bg-accent-blue/15 text-accent-blue" : "bg-muted text-muted-foreground"
+                    }`}>{f.status}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
+
+          {/* insights rail */}
+          <aside className="hidden border-l border-border bg-muted/10 p-4 xl:block">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 font-display text-[15px]"><span className="text-accent-blue">◆</span> Insights</div>
+              <span className="font-mono text-[9px] uppercase tracking-[0.1em] text-muted-foreground/50">updated 1m ago</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              {INSIGHTS.map((ins) => (
+                <div key={ins.title} className="rounded-[var(--radius-sm)] border border-border bg-background/30 p-3.5">
+                  <span className="inline-block rounded bg-accent-blue/12 px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-accent-blue">{ins.tag}</span>
+                  <div className="mt-2 text-[13px] font-medium leading-tight">{ins.title}</div>
+                  <p className="mt-1.5 text-[11.5px] leading-relaxed text-muted-foreground">{ins.body}</p>
+                  <div className="mt-3 flex items-center justify-between border-t border-hairline pt-2.5 font-mono text-[10px]">
+                    <span className="text-muted-foreground/70">{ins.stat}</span>
+                    <span className="text-accent-blue">{ins.delta}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </aside>
         </div>
       </div>
 
-      <p className="mt-4 text-center font-mono text-[11px] tracking-[0.04em] text-muted-foreground/70">
-        Interactive preview · simulated data. The real engine runs in an isolated environment and verifies every finding by exploitation.
-      </p>
-
       <style>{`
         @keyframes ld-slide { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
-        @keyframes ld-blink { 0%,100% { opacity: 0.25; } 50% { opacity: 1; } }
         @media (prefers-reduced-motion: reduce) {
-          [id="live-demo"] * { animation: none !important; }
+          .ld-anim, [style*="ld-slide"] { animation: none !important; }
         }
       `}</style>
-    </section>
+    </div>
   );
 }
 
@@ -536,65 +433,5 @@ function Pulse() {
       <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent-blue/60" />
       <span className="relative inline-flex size-[7px] rounded-full bg-accent-blue" />
     </span>
-  );
-}
-
-function MsgRow({ m }: { m: Msg }) {
-  if (m.role === "thinking") {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-accent-blue">Syndicate</span>
-        <span className="inline-flex gap-1 py-1">
-          {[0, 1, 2].map((i) => (
-            <span
-              key={i}
-              className="size-[5px] rounded-full bg-muted-foreground/60"
-              style={{ animation: `ld-blink 1.2s ${i * 0.2}s infinite` }}
-            />
-          ))}
-        </span>
-      </div>
-    );
-  }
-  if (m.role === "user") {
-    return (
-      <div className="flex flex-col items-end gap-1.5">
-        <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-muted-foreground/70">You</span>
-        <span className="max-w-[85%] rounded-[12px_12px_2px_12px] bg-accent-blue/12 px-3 py-2 text-[13px] text-foreground">
-          {m.text}
-        </span>
-      </div>
-    );
-  }
-  if (m.role === "steps") {
-    return (
-      <div className="flex flex-col gap-1.5">
-        <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-accent-blue">Syndicate</span>
-        <div className="mt-0.5 flex flex-col gap-2.5">
-          {m.steps.slice(0, m.shown).map(([phase, body], i) => {
-            const isLastShown = i === m.shown - 1;
-            const text = isLastShown ? m.typed : body;
-            const isFinal = i === m.steps.length - 1;
-            return (
-              <div key={phase} className="flex items-start gap-3">
-                <span className="w-[72px] shrink-0 pt-0.5 font-mono text-[9.5px] uppercase tracking-[0.1em] text-accent-blue">
-                  0{i + 1} {phase}
-                </span>
-                <span className={`text-[12.5px] leading-snug ${isFinal ? "text-foreground" : "text-muted-foreground"}`}>
-                  {text}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  // agent plain text
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className="font-mono text-[9.5px] uppercase tracking-[0.12em] text-accent-blue">Syndicate</span>
-      <span className="text-[13px] leading-relaxed text-muted-foreground">{m.text}</span>
-    </div>
   );
 }

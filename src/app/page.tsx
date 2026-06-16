@@ -22,11 +22,11 @@ const TRUST = ["ACME", "NORTHWIND", "INITECH", "HOOLI", "MASSIVE DYN", "STARK IN
 export default function Home() {
   return (
     <main className="relative">
-      {/* HERO — static subtle backdrop (animation removed) */}
+      {/* HERO — centered copy, then full-width interactive demo console */}
       <section className="relative isolate overflow-hidden">
         <div className="marble" />
 
-        <div className="relative z-10 mx-auto flex min-h-[72vh] max-w-4xl flex-col items-center justify-center px-6 py-32 text-center">
+        <div className="relative z-10 mx-auto flex max-w-4xl flex-col items-center px-6 pb-12 pt-28 text-center sm:pt-32">
           {/* eyebrow chip */}
           <div className="animate-rise">
             <span className="inline-flex items-center gap-2 border border-border bg-background/60 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-sm rounded-[var(--radius-sm)]">
@@ -63,6 +63,9 @@ export default function Home() {
             </span>
           </p>
         </div>
+
+        {/* Full-width interactive demo console, right below the hero copy */}
+        <LiveDemo />
       </section>
 
       {/* TRUST MARQUEE — blended, scrolls right→left */}
@@ -124,9 +127,6 @@ export default function Home() {
           <OutlineBtn href="/how-it-works">See the full workflow</OutlineBtn>
         </div>
       </section>
-
-      {/* LIVE DEMO — interactive operations console */}
-      <LiveDemo />
 
       {/* INDUSTRIES WE COVER — bento box */}
       <section className="mx-auto max-w-6xl px-6 py-20">
