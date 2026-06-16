@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LiveDemo from "@/components/LiveDemo";
 import { SolidBtn, OutlineBtn, SectionHeader } from "@/components/bits";
 
 const STEPS = [
@@ -123,6 +124,9 @@ export default function Home() {
           <OutlineBtn href="/how-it-works">See the full workflow</OutlineBtn>
         </div>
       </section>
+
+      {/* LIVE DEMO — interactive operations console */}
+      <LiveDemo />
 
       {/* INDUSTRIES WE COVER — bento box */}
       <section className="mx-auto max-w-6xl px-6 py-20">
