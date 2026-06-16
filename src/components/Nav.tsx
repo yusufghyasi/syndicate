@@ -65,7 +65,7 @@ export default function Nav() {
       >
         <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2.5">
-            <span className="relative grid size-6 place-items-center border border-foreground">
+            <span className="relative grid size-6 place-items-center rounded-[var(--radius-sm)] border border-foreground">
               <span className="size-1.5 bg-foreground" />
               <span
                 aria-hidden
@@ -103,7 +103,7 @@ export default function Nav() {
             <ThemeToggle />
             <Link
               href="/contact"
-              className="hidden bg-foreground px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85 sm:inline-flex"
+              className="hidden rounded-[var(--radius-sm)] bg-foreground px-3.5 py-1.5 text-[11px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85 sm:inline-flex"
             >
               Request access
             </Link>
@@ -113,7 +113,7 @@ export default function Nav() {
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
-              className="grid size-8 place-items-center border border-border transition-colors hover:bg-muted md:hidden"
+              className="grid size-8 place-items-center rounded-[var(--radius-sm)] border border-border transition-colors hover:bg-muted md:hidden"
             >
               {menuOpen ? <X className="size-4" /> : <Menu className="size-4" />}
             </button>
@@ -148,7 +148,7 @@ export default function Nav() {
             type="button"
             aria-label="Close menu"
             onClick={() => setMenuOpen(false)}
-            className="absolute right-5 top-5 grid size-8 place-items-center border border-border transition-colors hover:bg-muted"
+            className="absolute right-5 top-5 grid size-8 place-items-center rounded-[var(--radius-sm)] border border-border transition-colors hover:bg-muted"
           >
             <X className="size-4" />
           </button>
@@ -170,7 +170,7 @@ export default function Nav() {
           </div>
           <Link
             href="/contact"
-            className="mt-8 inline-flex w-full items-center justify-center bg-foreground px-3.5 py-3.5 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+            className="mt-8 inline-flex w-full items-center justify-center rounded-[var(--radius-sm)] bg-foreground px-3.5 py-3.5 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
           >
             Request access
           </Link>

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Bracketed from "@/components/Bracketed";
 import {
   PageHero,
   SectionHeader,
@@ -52,7 +51,7 @@ export default function Page() {
         title="Real vulnerabilities. Real impact."
         intro="The same engine that protects our customers surfaces novel vulnerabilities in the wild. We disclose them responsibly."
         right={
-          <Bracketed className="min-w-[230px] bg-card p-8">
+          <div className="min-w-[230px] rounded-[var(--radius)] border border-border bg-card p-8">
             <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
               Research output
             </span>
@@ -68,16 +67,16 @@ export default function Page() {
                 </div>
               ))}
             </div>
-          </Bracketed>
+          </div>
         }
       />
 
       {/* ADVISORY CARDS */}
       <section className="mx-auto max-w-4xl space-y-6 px-6 pb-24 pt-16">
         {ADVISORIES.map((a) => (
-          <Bracketed key={a.id} className={`bg-card ${accentBorder[a.tone]}`}>
+          <div key={a.id} className={`rounded-[var(--radius)] border border-border bg-card ${accentBorder[a.tone]}`}>
             <div className="flex flex-wrap items-center gap-4 border-b border-border px-6 py-4 text-[11px] uppercase tracking-[0.1em]">
-              <span className={`border px-2 py-0.5 ${sevColor[a.sev]}`}>{a.sev}</span>
+              <span className={`rounded-[var(--radius-sm)] border px-2 py-0.5 ${sevColor[a.sev]}`}>{a.sev}</span>
               <span className="text-muted-foreground">{a.id}</span>
               <span className="text-muted-foreground">— {a.type}</span>
               <span className="ml-auto flex items-center gap-4">
@@ -101,7 +100,7 @@ export default function Page() {
                 </span>
               </div>
             </div>
-          </Bracketed>
+          </div>
         ))}
       </section>
 
@@ -113,7 +112,7 @@ export default function Page() {
             title="How we handle what we find"
             intro="We give vendors time to fix before anything goes public. Always."
           />
-          <Bracketed className="bg-card p-8">
+          <div className="rounded-[var(--radius)] border border-border bg-card p-8">
             <ol className="space-y-4 text-[13px] leading-relaxed text-muted-foreground">
               {[
                 "Report privately to the vendor with a working proof-of-concept.",
@@ -126,7 +125,7 @@ export default function Page() {
                 </li>
               ))}
             </ol>
-          </Bracketed>
+          </div>
         </div>
         <p className="mt-8 text-[11px] uppercase tracking-[0.1em] text-muted-foreground/70">
           Security researcher?{" "}

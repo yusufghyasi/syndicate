@@ -74,8 +74,7 @@ export function DiagnosticsPanel() {
   const rows = data?.rows ?? PLACEHOLDER;
 
   return (
-    <div className="relative border border-border p-6">
-      <span className="bracket-corners" />
+    <div className="relative rounded-[var(--radius)] border border-border p-6">
       <div className="mb-4 text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
         Diagnostics
       </div>

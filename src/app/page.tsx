@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { GLSLHills } from "@/components/ui/glsl-hills";
-import Bracketed from "@/components/Bracketed";
 import { SolidBtn, OutlineBtn, SectionHeader } from "@/components/bits";
 
 const STEPS = [
@@ -51,7 +50,7 @@ export default function Home() {
         <div className="relative z-10 mx-auto flex min-h-[72vh] max-w-4xl flex-col items-center justify-center px-6 py-32 text-center">
           {/* eyebrow chip */}
           <div className="animate-rise">
-            <span className="inline-flex items-center gap-2 border border-border bg-background/60 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-sm">
+            <span className="inline-flex items-center gap-2 border border-border bg-background/60 px-3.5 py-1.5 text-[11px] uppercase tracking-[0.2em] text-muted-foreground backdrop-blur-sm rounded-[var(--radius-sm)]">
               <span className="size-1.5 bg-accent-red" />
               Autonomous penetration testing
             </span>
@@ -105,7 +104,7 @@ export default function Home() {
 
       {/* STOP CHASING ALERTS */}
       <section className="mx-auto max-w-6xl px-6 py-20">
-        <Bracketed className="relative overflow-hidden bg-card">
+        <div className="relative overflow-hidden bg-card rounded-[var(--radius)] border border-border">
           <div className="grid gap-10 p-10 lg:grid-cols-2 lg:p-16">
             <h2 className="font-display text-[clamp(26px,3.4vw,38px)] font-medium leading-[1.08] text-balance">
               Stop chasing alerts. Start fixing what&apos;s real.
@@ -124,7 +123,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </Bracketed>
+        </div>
       </section>
 
       {/* HOW IT WORKS */}
@@ -132,14 +131,14 @@ export default function Home() {
         <SectionHeader eyebrow="How it works" title="Three phases, end to end" />
         <div className="mt-14 grid gap-6 md:grid-cols-3">
           {STEPS.map((s) => (
-            <Bracketed key={s.n} className="bg-card p-8 transition-colors hover:bg-muted">
+            <div key={s.n} className="bg-card p-8 transition-colors hover:bg-muted rounded-[var(--radius)] border border-border">
               <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
                 <span className="font-display text-[14px] text-accent-blue">{s.n}</span>
                 <span>Phase</span>
               </div>
               <h3 className="mt-10 font-display text-[19px] font-medium tracking-tight">{s.title}</h3>
               <p className="mt-4 text-[13.5px] leading-relaxed text-muted-foreground">{s.body}</p>
-            </Bracketed>
+            </div>
           ))}
         </div>
         <div className="mt-12">
@@ -156,9 +155,9 @@ export default function Home() {
         />
         <div className="mt-14 grid auto-rows-[minmax(180px,auto)] grid-cols-1 gap-5 md:grid-cols-4">
           {INDUSTRIES.map((p, i) => (
-            <Bracketed
+            <div
               key={p.title}
-              className={`flex flex-col justify-between bg-card p-7 transition-colors hover:bg-muted ${p.span}`}
+              className={`flex flex-col justify-between bg-card p-7 transition-colors hover:bg-muted rounded-[var(--radius)] border border-border ${p.span}`}
             >
               <span className="font-display text-[12px] text-accent-blue">
                 {String(i + 1).padStart(2, "0")}
@@ -171,7 +170,7 @@ export default function Home() {
                   {p.body}
                 </p>
               </div>
-            </Bracketed>
+            </div>
           ))}
         </div>
       </section>
@@ -183,9 +182,9 @@ export default function Home() {
           title="Real vulnerabilities. Real impact."
           intro="The same engine that protects our customers surfaces novel vulnerabilities in the wild. We disclose them responsibly."
         />
-        <Bracketed className="mt-12 bg-card">
+        <div className="mt-12 bg-card rounded-[var(--radius)] border border-border">
           <div className="flex flex-wrap items-center gap-3 border-b border-border px-6 py-4 text-[11px] uppercase tracking-[0.1em]">
-            <span className="border border-accent-red px-2 py-0.5 text-accent-red">Critical</span>
+            <span className="border border-accent-red px-2 py-0.5 text-accent-red rounded-[var(--radius-sm)]">Critical</span>
             <span className="text-muted-foreground">SYN-001</span>
             <span className="text-muted-foreground">— Pre-auth RCE</span>
           </div>
@@ -201,12 +200,12 @@ export default function Home() {
               View advisories →
             </Link>
           </div>
-        </Bracketed>
+        </div>
       </section>
 
       {/* CLOSING CTA — designed panel */}
       <section className="mx-auto max-w-6xl px-6 py-24">
-        <Bracketed className="relative overflow-hidden bg-foreground text-background">
+        <div className="relative overflow-hidden bg-foreground text-background rounded-[var(--radius)] border border-border">
           <div className="relative grid gap-10 p-10 lg:grid-cols-[1.3fr_1fr] lg:items-center lg:p-16">
             <div>
               <span className="inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-background/60">
@@ -239,21 +238,21 @@ export default function Home() {
               <div className="flex flex-wrap items-center gap-3">
                 <Link
                   href="/contact"
-                  className="inline-flex items-center gap-2 bg-background px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-90"
+                  className="inline-flex items-center gap-2 bg-background px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-90 rounded-[var(--radius-sm)]"
                 >
                   Request access
                   <span aria-hidden className="text-[10px] opacity-70">↗</span>
                 </Link>
                 <Link
                   href="/how-it-works"
-                  className="inline-flex items-center border border-background/40 px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-colors hover:bg-background/10"
+                  className="inline-flex items-center border border-background/40 px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-colors hover:bg-background/10 rounded-[var(--radius-sm)]"
                 >
                   See how it works
                 </Link>
               </div>
             </div>
           </div>
-        </Bracketed>
+        </div>
       </section>
     </main>
   );

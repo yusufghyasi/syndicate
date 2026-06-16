@@ -4,33 +4,46 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  /* ===== Light theme (cream / ink) ===== */
-  --background: oklch(97.35% 0.0261 90.1);
-  --foreground: oklch(17.07% 0.0143 2.14);
-  --muted: oklch(17.07% 0.0143 2.14 / 0.05);
-  --muted-foreground: oklch(17.07% 0.0143 2.14 / 0.6);
-  --border: oklch(17.07% 0.0143 2.14 / 0.18);
-  --hairline: oklch(17.07% 0.0143 2.14 / 0.1);
-  --card: oklch(99% 0.012 90.1);
-  --bracket: oklch(17.07% 0.0143 2.14 / 0.45);
+  /* ===== Light theme (off-white / pitch-black / SF blue) ===== */
+  --background: #f7f7f5;            /* off-white */
+  --foreground: #050505;            /* pitch black */
+  --muted: oklch(0% 0 0 / 0.05);
+  --muted-foreground: oklch(0% 0 0 / 0.6);
+  --border: oklch(0% 0 0 / 0.16);
+  --hairline: oklch(0% 0 0 / 0.09);
+  --card: #ffffff;
+  --bracket: oklch(0% 0 0 / 0.4);
 
-  --accent-red: #fb2c36;
-  --accent-amber: #edb200;
-  --accent-orange: #fe6e00;
-  --accent-blue: #00a5ef;
-  --accent-green: #00c758;
+  /* SF system blue is the single accent. The red/amber/orange/green tokens are
+     kept as aliases of blue so any legacy usage stays on-scheme (monochrome). */
+  --accent-blue: #007aff;          /* SF blue */
+  --accent-red: #007aff;
+  --accent-amber: #007aff;
+  --accent-orange: #007aff;
+  --accent-green: #007aff;
+
+  /* global corner radius */
+  --radius: 10px;
+  --radius-sm: 7px;
 }
 
 .dark {
-  /* ===== Dark theme (neutral warm near-black — inverted cream, NOT space) ===== */
-  --background: oklch(14% 0.004 60);
-  --foreground: oklch(96% 0.01 90);
-  --muted: oklch(96% 0.01 90 / 0.06);
-  --muted-foreground: oklch(96% 0.01 90 / 0.58);
-  --border: oklch(96% 0.01 90 / 0.16);
-  --hairline: oklch(96% 0.01 90 / 0.09);
-  --card: oklch(17% 0.004 60);
-  --bracket: oklch(96% 0.01 90 / 0.5);
+  /* ===== Dark theme (pitch-black / off-white / SF blue) ===== */
+  --background: #050505;            /* pitch black */
+  --foreground: #f7f7f5;            /* off-white */
+  --muted: oklch(100% 0 0 / 0.06);
+  --muted-foreground: oklch(100% 0 0 / 0.58);
+  --border: oklch(100% 0 0 / 0.16);
+  --hairline: oklch(100% 0 0 / 0.09);
+  --card: #0e0e0f;
+  --bracket: oklch(100% 0 0 / 0.5);
+
+  /* slightly brighter SF blue reads better on pitch black */
+  --accent-blue: #0a84ff;
+  --accent-red: #0a84ff;
+  --accent-amber: #0a84ff;
+  --accent-orange: #0a84ff;
+  --accent-green: #0a84ff;
 }
 
 @theme inline {
@@ -47,6 +60,13 @@
   --color-accent-orange: var(--accent-orange);
   --color-accent-blue: var(--accent-blue);
   --color-accent-green: var(--accent-green);
+
+  /* Corner radius tokens — drives Tailwind's rounded / rounded-sm / rounded-lg */
+  --radius-sm: var(--radius-sm);
+  --radius: var(--radius);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) + 8px);
 
   --font-display: var(--font-space-grotesk);
   --font-mono: var(--font-geist-mono);

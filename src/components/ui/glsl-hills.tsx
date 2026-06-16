@@ -38,8 +38,10 @@ const GLSLHills = ({
     const isDark = () => document.documentElement.classList.contains("dark");
     // Theme-aware: a bright gray glow on the dark page; on cream we need a
     // genuinely dark ink so the ridge lines actually read against the paper.
+    // Off-white ridge lines on pitch-black in dark; near-black lines on
+    // off-white in light. Neutral grays (no warm tint) to match the new scheme.
     const themeColor = (): [number, number, number] =>
-      color ?? (isDark() ? [0.85, 0.85, 0.85] : [0.18, 0.17, 0.15]);
+      color ?? (isDark() ? [0.88, 0.88, 0.9] : [0.12, 0.12, 0.14]);
     // Wireframe ridge lines — these don't fill, so opacity can be higher
     // without ever forming a slab. Light needs a bit more to show on cream.
     const themeOpacity = (): number => (isDark() ? 0.5 : 0.5);

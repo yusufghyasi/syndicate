@@ -42,7 +42,7 @@ export default function Footer() {
           {/* left: about + columns */}
           <div>
             <div className="flex items-center gap-2.5">
-              <span className="grid size-5 place-items-center border border-foreground">
+              <span className="grid size-5 place-items-center rounded-[var(--radius-sm)] border border-foreground">
                 <span className="size-1.5 bg-foreground" />
               </span>
               <span className="font-display text-[12px] font-medium tracking-[0.24em]">

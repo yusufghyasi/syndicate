@@ -105,7 +105,7 @@ export default function Page() {
           {["GitHub", "GitLab", "Bitbucket", "Jira", "Slack", "Linear", "CI / CD", "Webhooks"].map((n) => (
             <div
               key={n}
-              className="border border-border px-5 py-6 text-center font-display text-[13px] tracking-[0.12em] text-muted-foreground/80 transition-colors hover:border-foreground/40 hover:text-foreground"
+              className="rounded-[var(--radius-sm)] border border-border px-5 py-6 text-center font-display text-[13px] tracking-[0.12em] text-muted-foreground/80 transition-colors hover:border-foreground/40 hover:text-foreground"
             >
               {n}
             </div>

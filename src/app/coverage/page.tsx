@@ -25,16 +25,17 @@ const ROWS: { cls: string; examples: string; sev: "Critical" | "High" | "Medium"
   { cls: "Secrets & misconfiguration", examples: "exposed keys · headers · insecure defaults", sev: "Medium", chain: false },
 ];
 
+// Monochrome severity hierarchy — encoded by blue intensity, not hue.
 const sevColor: Record<string, string> = {
-  Critical: "text-accent-red border-accent-red",
-  High: "text-accent-orange border-accent-orange",
-  Medium: "text-accent-amber border-accent-amber",
+  Critical: "text-accent-blue border-accent-blue bg-accent-blue/10",
+  High: "text-accent-blue/80 border-accent-blue/50",
+  Medium: "text-muted-foreground border-border",
 };
 
 const DISTRIBUTION: { label: string; count: number; pct: number; fill: string }[] = [
-  { label: "Critical", count: 2, pct: 80, fill: "bg-accent-red" },
-  { label: "High", count: 4, pct: 64, fill: "bg-accent-orange" },
-  { label: "Medium", count: 2, pct: 40, fill: "bg-accent-amber" },
+  { label: "Critical", count: 2, pct: 80, fill: "bg-accent-blue" },
+  { label: "High", count: 4, pct: 64, fill: "bg-accent-blue/70" },
+  { label: "Medium", count: 2, pct: 40, fill: "bg-accent-blue/40" },
 ];
 
 export default function Page() {
@@ -71,7 +72,7 @@ export default function Page() {
               <span className="text-center text-[13px]">
                 {r.chain ? <span className="text-accent-green">✓</span> : <span className="text-muted-foreground/40">—</span>}
               </span>
-              <span className={`justify-self-end border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] ${sevColor[r.sev]}`}>
+              <span className={`justify-self-end rounded-[var(--radius-sm)] border px-2 py-0.5 text-[10px] uppercase tracking-[0.1em] ${sevColor[r.sev]}`}>
                 {r.sev}
               </span>
             </div>

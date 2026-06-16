@@ -79,8 +79,7 @@ export default function LiveTerminal({ className = "" }: { className?: string })
   }, []);
 
   return (
-    <div className={`relative border border-border bg-card ${className}`}>
-      <span className="bracket-corners" />
+    <div className={`relative rounded-[var(--radius)] border border-border bg-card ${className}`}>
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
         <span className="size-1.5 bg-accent-green" />
         syndicate · live assessment

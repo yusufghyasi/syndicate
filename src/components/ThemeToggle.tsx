@@ -30,7 +30,7 @@ export default function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Toggle theme"
-      className="grid size-8 place-items-center border border-border transition-colors hover:bg-muted"
+      className="grid size-8 place-items-center rounded-[var(--radius-sm)] border border-border transition-colors hover:bg-muted"
     >
       {/* Until mounted, render an invisible fixed-size box so SSR + first
           client render are byte-identical. */}

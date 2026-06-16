@@ -22,7 +22,7 @@ export function SolidBtn({
   return (
     <Link
       href={href}
-      className="inline-flex items-center gap-2 bg-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+      className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
     >
       {children}
       <span aria-hidden className="text-[10px] opacity-70">
@@ -42,7 +42,7 @@ export function OutlineBtn({
   return (
     <Link
       href={href}
-      className="inline-flex items-center border border-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] transition-colors hover:bg-muted"
+      className="inline-flex items-center rounded-[var(--radius-sm)] border border-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] transition-colors hover:bg-muted"
     >
       {children}
     </Link>
@@ -236,7 +236,7 @@ export function CtaPanel({
             <div className="flex flex-wrap items-center gap-3">
               <Link
                 href={primary.href}
-                className="inline-flex items-center gap-2 bg-background px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-[var(--radius-sm)] bg-background px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-foreground transition-opacity hover:opacity-90"
               >
                 {primary.label}
                 <span aria-hidden className="text-[10px] opacity-70">↗</span>
@@ -244,7 +244,7 @@ export function CtaPanel({
               {secondary && (
                 <Link
                   href={secondary.href}
-                  className="inline-flex items-center border border-background/40 px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-colors hover:bg-background/10"
+                  className="inline-flex items-center rounded-[var(--radius-sm)] border border-background/40 px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-colors hover:bg-background/10"
                 >
                   {secondary.label}
                 </Link>

@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Bracketed from "@/components/Bracketed";
 import { PageHero, Label, StatStrip, TrustRow } from "@/components/bits";
 
 export const metadata: Metadata = {
@@ -22,7 +21,7 @@ const STEPS = [
 ];
 
 const inputCls =
-  "mt-2 w-full border border-border bg-background px-3 py-2.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-foreground focus:ring-1 focus:ring-foreground/20";
+  "mt-2 w-full rounded-[var(--radius-sm)] border border-border bg-background px-3 py-2.5 text-[13px] outline-none transition-colors placeholder:text-muted-foreground/50 focus:border-foreground focus:ring-1 focus:ring-foreground/20";
 
 export default function Page() {
   return (
@@ -39,7 +38,7 @@ export default function Page() {
       <section className="mx-auto max-w-5xl px-6 pb-24 pt-16">
         <div className="grid gap-12 lg:grid-cols-2">
           {/* form first */}
-          <Bracketed className="h-fit bg-card p-8">
+          <div className="h-fit rounded-[var(--radius)] border border-border bg-card p-8">
             <form className="space-y-5">
               {FIELDS.map((f) => (
                 <div key={f.id}>
@@ -63,12 +62,12 @@ export default function Page() {
               </div>
               <button
                 type="submit"
-                className="w-full bg-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
+                className="w-full rounded-[var(--radius-sm)] bg-foreground px-5 py-3 text-[12px] uppercase tracking-[0.12em] text-background transition-opacity hover:opacity-85"
               >
                 Request access ↗
               </button>
             </form>
-          </Bracketed>
+          </div>
 
           {/* what happens next */}
           <div>
@@ -85,12 +84,12 @@ export default function Page() {
                 </div>
               ))}
             </div>
-            <Bracketed className="mt-8 bg-card p-5">
+            <div className="mt-8 rounded-[var(--radius)] border border-border bg-card p-5">
               <p className="text-[12px] leading-relaxed text-muted-foreground">
                 <span className="text-foreground">Response within one business day.</span>{" "}
                 Isolated environment · credentials encrypted and never retained.
               </p>
-            </Bracketed>
+            </div>
           </div>
         </div>
       </section>
