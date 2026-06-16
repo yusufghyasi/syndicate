@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { GLSLHills } from "@/components/ui/glsl-hills";
 import { SolidBtn, OutlineBtn, SectionHeader } from "@/components/bits";
 
 const STEPS = [
@@ -22,30 +21,9 @@ const TRUST = ["ACME", "NORTHWIND", "INITECH", "HOOLI", "MASSIVE DYN", "STARK IN
 export default function Home() {
   return (
     <main className="relative">
-      {/* HERO — animated GLSL hills background */}
+      {/* HERO — static subtle backdrop (animation removed) */}
       <section className="relative isolate overflow-hidden">
         <div className="marble" />
-        {/* animated rolling hills — full-bleed, fills the hero */}
-        <div
-          className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_0%,transparent_30%,#000_60%,#000_88%,transparent)]"
-          aria-hidden
-        >
-          <GLSLHills width="100%" height="100%" speed={1.1} />
-        </div>
-
-        {/* contrast scrim — radial wash of the page background behind the hero
-            copy. Opaque-ish at center for guaranteed text contrast, fades to
-            transparent at the edges so the wire-mountain ridges still show.
-            Theme-aware via var(--background): cream in light, near-black in dark.
-            Sits above the canvas (z-1) and below the copy (z-10). */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2]"
-          style={{
-            background:
-              "radial-gradient(64% 44% at 50% 56%, var(--background) 0%, color-mix(in oklab, var(--background) 55%, transparent) 48%, transparent 78%)",
-          }}
-        />
 
         <div className="relative z-10 mx-auto flex min-h-[72vh] max-w-4xl flex-col items-center justify-center px-6 py-32 text-center">
           {/* eyebrow chip */}
