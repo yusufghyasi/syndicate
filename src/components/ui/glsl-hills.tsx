@@ -250,6 +250,20 @@ const GLSLHills = ({
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
       renderer.setSize(w, h, false); // updateStyle=false → keep CSS inset:0
       camera.aspect = w / h;
+      // HORIZONTAL-FOV LOCK: PerspectiveCamera's `fov` is the VERTICAL fov, so a
+      // wide-short hero box (aspect ~3:1) would crop the terrain vertically and
+      // look zoomed-in. Instead, hold a constant horizontal field of view and
+      // DERIVE the vertical fov from the current aspect — wide boxes then show
+      // MORE terrain top-to-bottom (zoomed out) instead of cropping. Clamp so
+      // tall/portrait phones don't blow it out.
+      const HFOV = 70; // degrees of horizontal field of view to keep constant
+      const hfovRad = (HFOV * Math.PI) / 180;
+      const vfovRad = 2 * Math.atan(Math.tan(hfovRad / 2) / camera.aspect);
+      camera.fov = THREE.MathUtils.clamp(
+        (vfovRad * 180) / Math.PI,
+        38,
+        90,
+      );
       camera.updateProjectionMatrix();
     };
 
@@ -272,8 +286,8 @@ const GLSLHills = ({
 
     const init = () => {
       renderer.setClearColor(0x000000, 0);
-      camera.position.set(0, 16, cameraZ);
-      camera.lookAt(new THREE.Vector3(0, 20, 0));
+      camera.position.set(0, 22, cameraZ);
+      camera.lookAt(new THREE.Vector3(0, 18, 0));
       scene.add(plane.mesh);
       window.addEventListener("resize", resize);
       ro = new ResizeObserver(resize);
