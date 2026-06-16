@@ -30,7 +30,7 @@ export default function Home() {
           className="pointer-events-none absolute inset-0 [mask-image:linear-gradient(to_bottom,transparent_0%,transparent_30%,#000_60%,#000_88%,transparent)]"
           aria-hidden
         >
-          <GLSLHills width="100%" height="100%" speed={0.4} />
+          <GLSLHills width="100%" height="100%" speed={1.1} />
         </div>
 
         {/* contrast scrim — radial wash of the page background behind the hero

@@ -235,8 +235,10 @@ const GLSLHills = ({
       1,
       10000,
     );
-    const clock = new THREE.Clock();
     const plane = new Plane();
+    // Self-contained clock via performance.now() — never stalls (THREE.Clock is
+    // deprecated and can return 0/garbage deltas, which would freeze the scroll).
+    let lastT = performance.now();
 
     // Size to the CONTAINER (the hero box), not the window — otherwise on a
     // portrait phone the canvas renders at the full viewport height, overflows
@@ -270,9 +272,12 @@ const GLSLHills = ({
     let disposed = false;
 
     const render = () => {
-      // Clamp delta so a backgrounded tab (huge delta) or a stalled clock
-      // (zero delta) can never freeze or jump the animation.
-      let delta = clock.getDelta();
+      const now = performance.now();
+      // Delta in seconds. Clamp so a backgrounded tab (huge delta) or a stalled
+      // timer (zero/negative delta) can never freeze OR jump the animation —
+      // we always advance by at least a sane frame so it scrolls forever.
+      let delta = (now - lastT) / 1000;
+      lastT = now;
       if (!(delta > 0) || delta > 0.05) delta = 0.016;
       plane.render(delta);
       renderer.render(scene, camera);
@@ -293,7 +298,7 @@ const GLSLHills = ({
       ro = new ResizeObserver(resize);
       if (containerRef.current) ro.observe(containerRef.current);
       resize();
-      clock.start();
+      lastT = performance.now();
       renderLoop();
     };
 
